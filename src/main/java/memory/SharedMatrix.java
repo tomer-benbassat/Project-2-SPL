@@ -9,11 +9,34 @@ public class SharedMatrix {
     }
 
     public SharedMatrix(double[][] matrix) {
-        // TODO: construct matrix as row-major SharedVectors
+        if (matrix == null) throw new IllegalArgumentException("matrix is null");
+        int n = matrix.length;
+        if (n==0) throw new IllegalArgumentException("matrix is empty");
+        SharedVector[] vectorList = new SharedVector[n];
+        for(int i = 0;i<n;i++){
+            if (matrix[i].length != n) {
+                throw new IllegalArgumentException("inconsistent row size");
+            }
+            SharedVector vector = new SharedVector
+                (matrix[i], VectorOrientation.ROW_MAJOR);
+            vectorList[i]=vector;
+        }
+        vectors = vectorList;
     }
 
     public void loadRowMajor(double[][] matrix) {
-        // TODO: replace internal data with new row-major matrix
+        if (matrix == null) throw new IllegalArgumentException("matrix is null");
+        int n = matrix.length;
+        if (n==0) throw new IllegalArgumentException("matrix is empty");
+        if (n!=vectors.length) throw new IllegalArgumentException("new matrix is not"+
+        " the same size as the current one");
+        for(int i = 0;i<n;i++){
+            if (matrix[i].length != n) {
+                throw new IllegalArgumentException("inconsistent row size");
+            }
+            vectors[i] = new SharedVector
+                (matrix[i], VectorOrientation.ROW_MAJOR);
+        }
     }
 
     public void loadColumnMajor(double[][] matrix) {
@@ -26,18 +49,18 @@ public class SharedMatrix {
     }
 
     public SharedVector get(int index) {
-        // TODO: return vector at index
-        return null;
+        return vectors[index];
     }
 
     public int length() {
-        // TODO: return number of stored vectors
-        return 0;
+        return vectors.length;
     }
 
     public VectorOrientation getOrientation() {
+        if (vectors.length==0) throw new IllegalStateException
+            ("Matrix has no vectors");
         // TODO: return orientation
-        return null;
+        return vectors[0].getOrientation();
     }
 
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
