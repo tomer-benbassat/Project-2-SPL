@@ -5,7 +5,7 @@ public class SharedMatrix {
     private volatile SharedVector[] vectors = {}; // underlying vectors
 
     public SharedMatrix() {
-                vectors = null;
+        // TODO: initialize empty matrix
     }
 
     public SharedMatrix(double[][] matrix) {
