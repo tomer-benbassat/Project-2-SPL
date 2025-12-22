@@ -3,15 +3,18 @@ package memory;
 import java.util.concurrent.locks.ReadWriteLock;
 
 public class SharedVector {
-    //@INV:
+    //@INV:vector!=null && orientation!=null && lock!=null
 
     private double[] vector;
     private VectorOrientation orientation;
-
     //may be used to protect concurrent access to its underlying array when necessary:
     private ReadWriteLock lock = new java.util.concurrent.locks.ReentrantReadWriteLock();
 
+    
     public SharedVector(double[] vector, VectorOrientation orientation) {
+        if(vector==null || orientation == null ){
+            throw new IllegalArgumentException("null parmaters");
+        }
         this.vector = vector;
         this.orientation = orientation;
     }
@@ -167,7 +170,7 @@ public class SharedVector {
         writeLock();
         try{
         if(matrix==null || matrix.length()==0){
-            throw new IllegalArgumentException("matrix is null or empty")
+            throw new IllegalArgumentException("matrix is null or empty");
         }
         if(matrix.getOrientation()!=VectorOrientation.COLUMN_MAJOR){
             throw new IllegalArgumentException("require COLUMN_MAJOR matrix");
