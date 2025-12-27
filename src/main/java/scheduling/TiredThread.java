@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class TiredThread extends Thread implements Comparable<TiredThread> {
 
+    //lambada of empty function
     private static final Runnable POISON_PILL = () -> {}; // Special task to signal shutdown
 
     private final int id; // Worker index assigned by the executor
@@ -55,26 +56,74 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * This method is non-blocking: if the worker is not ready to accept a task,
      * it throws IllegalStateException.
      */
+    //@PRE:the worker is ready to accept a task
+    //@POST:the task has been inserted to this thread handoff Queue
     public void newTask(Runnable task) {
-       // TODO
+        if(isBusy() || !handoff.offer(task)){
+            //first condition:thread is currently executing task, so its not optimized to give it to hime. we would like to give it to other available thread
+            //second conition:queue is full,dont have place for other task
+            throw new IllegalStateException();
+        }
     }
 
     /**
      * Request this worker to stop after finishing current task.
      * Inserts a poison pill so the worker wakes up and exits.
      */
+    //@PRE:current thread is alive
+    //@POST:handoff.take() == poison_pill
     public void shutdown() {
-       // TODO
-    }
+        //put poison pill in the queue and if it's full, wait patiently
+        //if the thread was already cancelled(we caught Interruption exception) we ignore it
+        try{
+        handoff.put(POISON_PILL);
+        }catch(InterruptedException e){
+            alive.set(false);
+        }
+       }
+    
 
     @Override
+    //@PRE:alive==true
+    //@POST: alive ==false
     public void run() {
-       // TODO
-    }
+        while(alive.get()){
+            try{
+                Runnable task = handoff.take();
+                if(task == POISON_PILL){
+                    alive.set(false);
+                    return;
+                }
+                //calculate timeIdle
+                timeIdle.set(timeIdle.get() + (System.nanoTime() - idleStartTime.get()));
+                //save the time we started the task
+                long taskStarted = System.nanoTime();
+                //run the task
+                busy.set(true);
+                task.run();
+                busy.set(false);
+                //calculate time used
+                timeUsed.set(timeUsed.get() + (System.nanoTime() - taskStarted));
+                //track idle new starting time(finish the task so now we idle again)
+                idleStartTime.set(System.nanoTime());
+        }catch(InterruptedException e) {
+            alive.set(false);
+            return;
+            }
+        }
+    }   
 
     @Override
+    //@PRE:none
+    //@POST:none
     public int compareTo(TiredThread o) {
-        // TODO
+        if(getFatigue() > o.getFatigue()){
+            return 1;
+        }
+        if(getFatigue() < o.getFatigue()){
+            return -1;
+        }
         return 0;
     }
 }
+
