@@ -12,21 +12,67 @@ public class TiredExecutor {
     private final AtomicInteger inFlight = new AtomicInteger(0);
 
     public TiredExecutor(int numThreads) {
-        // TODO
-        workers = null; // placeholder
+        workers = new TiredThread[numThreads];
+        for(int i=0; i<numThreads;i++){
+            double fatigueFactor = Math.random() * (1.5 - 0.5) + 0.5;
+            workers[i] = new TiredThread(i,fatigueFactor);
+            idleMinHeap.add(workers[i]);
+            workers[i].start();
+        }
     }
 
+    //@PRE:none
+    //@POST:task has submited, the worker who executed it, has returned to priority queue
     public void submit(Runnable task) {
-        // TODO
+        try{
+            TiredThread currentThread = idleMinHeap.take(); //take aka blocking if none are current idle
+            inFlight.incrementAndGet();
+            //make sure thread is back to priority queue after finishing task:
+            Runnable wrapper = new Runnable(){ //anonymous
+                @Override
+                public void run(){
+                    try{
+                        task.run();
+                    }finally{ //suppose task.run failed, make sure thread is not lost in space&counter is up-to-date
+                        idleMinHeap.add(currentThread);
+                        synchronized(inFlight){ //you have to synchronized in order to use wait&notify
+                            inFlight.decrementAndGet();
+                            if(inFlight.get()==0){
+                            inFlight.notifyAll();
+                            }
+                        } 
+                    }
+                }
+            };
+            currentThread.newTask(wrapper);
+        }catch(InterruptedException e){  //we couldnt take thread of priority queue so counter-- (the task is not executed...)
+            inFlight.decrementAndGet();
+        }
     }
 
+    //@PRE:none
+    //@POST:all tasks submited to threads and have been executed
     public void submitAll(Iterable<Runnable> tasks) {
-        // TODO: submit tasks one by one and wait until all finish
+        for (Runnable task : tasks) {
+            submit(task);
+        }
+        try{
+            synchronized(inFlight){
+                while(inFlight.get()!=0){
+                inFlight.wait(); //executor sleeps, inflight unlocked in order for threads to update it.
+                }
+            }
+        }catch(InterruptedException e){
+            return;
+        }
     }
+
 
     public void shutdown() throws InterruptedException {
-        // TODO
-    }
+        
+
+        }
+    
 
     public synchronized String getWorkerReport() {
         // TODO: return readable statistics for each worker
