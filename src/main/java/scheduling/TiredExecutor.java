@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TiredExecutor {
+    //@INV: Inflight >=0 && workers!=null
 
     private final TiredThread[] workers;
     private final PriorityBlockingQueue<TiredThread> idleMinHeap = new PriorityBlockingQueue<>();
@@ -25,8 +26,8 @@ public class TiredExecutor {
     //@POST:task has submited, the worker who executed it, has returned to priority queue
     public void submit(Runnable task) {
         try{
-            TiredThread currentThread = idleMinHeap.take(); //take aka blocking if none are current idle
             inFlight.incrementAndGet();
+            TiredThread currentThread = idleMinHeap.take(); //take aka blocking if none are current idle
             //make sure thread is back to priority queue after finishing task:
             Runnable wrapper = new Runnable(){ //anonymous
                 @Override
@@ -67,15 +68,24 @@ public class TiredExecutor {
         }
     }
 
-
-    public void shutdown() throws InterruptedException {
-        
-
+    //@PRE:none
+    //@POST:all threads has been shutdown
+    public void shutdown() throws InterruptedException { //if join throws InterruptedException, throw it back to the calling method
+        for(TiredThread worker : workers){
+            worker.shutdown();
         }
+        for(TiredThread worker : workers){
+            worker.join(); //waits for the thread to shutdown completelly
+        }
+    }
     
-
+    //@PRE:none
+    //@@POST:strinn of statistics on each thread has returned
     public synchronized String getWorkerReport() {
-        // TODO: return readable statistics for each worker
-        return null;
+        String report = "";
+        for(TiredThread worker : workers){
+            report = report + "Thread ID: " + worker.getWorkerId() + "," + "Fatigue: " + worker.getFatigue()+ "," + "Is Busy: " + worker.isBusy() + "," + "Time Used: " + worker.getTimeUsed() + "," + "Time Idle: "+ worker.getTimeIdle() + "\n";
+        }
+        return report;
     }
 }

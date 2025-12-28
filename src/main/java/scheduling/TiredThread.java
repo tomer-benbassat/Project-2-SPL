@@ -6,7 +6,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class TiredThread extends Thread implements Comparable<TiredThread> {
+    //@INV: timeused.get >=0 && timeIdle.get >=0 && id>=0
 
+    
     //lambada of empty function
     private static final Runnable POISON_PILL = () -> {}; // Special task to signal shutdown
 
