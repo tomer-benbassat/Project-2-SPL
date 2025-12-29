@@ -5,6 +5,7 @@ import memory.*;
 import scheduling.*;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class LinearAlgebraEngine {
 
@@ -13,7 +14,7 @@ public class LinearAlgebraEngine {
     private TiredExecutor executor;
 
     public LinearAlgebraEngine(int numThreads) {
-        // TODO: create executor with given thread count
+        executor = new TiredExecutor(numThreads); 
     }
 
     public ComputationNode run(ComputationNode computationRoot) {
@@ -26,28 +27,66 @@ public class LinearAlgebraEngine {
         // TODO: create compute tasks & submit tasks to executor
     }
 
+    //@PRE: leftMatrix and rightmatrix has same number of rows and columns, &&they arent empty
     public List<Runnable> createAddTasks() {
-        // TODO: return tasks that perform row-wise addition
-        return null;
+        //return tasks that perform row-wise addition
+        if(leftMatrix.length()==0|| rightMatrix.length() == 0){
+            throw new IllegalArgumentException("empty matrices");
+        }
+        if(leftMatrix.length()!=rightMatrix.length() || leftMatrix.get(0).length() !=rightMatrix.get(0).length()){
+            throw new IllegalArgumentException("unsuitable dimesnsions");
+        }
+        List<Runnable> result = new ArrayList<>();
+        for(int i=0; i< leftMatrix.length();i++){
+            SharedVector leftRow = leftMatrix.get(i);
+            SharedVector rightRow = rightMatrix.get(i);
+            result.add(()->leftRow.add(rightRow));
+        }
+        return result;
     }
 
+    //@PRE:rightMatrix is column oriented! & matrices arent empty & left.columnsNumber == right.rowsNumber 
     public List<Runnable> createMultiplyTasks() {
-        // TODO: return tasks that perform row × matrix multiplication
-        return null;
+        //tasks that perform row × matrix multiplication
+        if(rightMatrix.getOrientation()!=VectorOrientation.COLUMN_MAJOR){
+            throw new IllegalArgumentException();
+        }
+        if(leftMatrix.length()==0|| rightMatrix.length() == 0){
+            throw new IllegalArgumentException("empty matrices");
+        }
+        if(leftMatrix.get(0).length() != rightMatrix.get(0).length()){
+            throw new IllegalArgumentException("unsuitable demensions");
+        }
+        List<Runnable> result = new ArrayList<>();
+        for(int i=0;i < leftMatrix.length();i++){
+            SharedVector row = leftMatrix.get(i);
+            result.add(()->row.vecMatMul(rightMatrix));
+        }
+        return result;
     }
 
     public List<Runnable> createNegateTasks() {
-        // TODO: return tasks that negate rows
-        return null;
+        //return tasks that negate rows
+        List<Runnable> result = new ArrayList<>();
+        for(int i=0; i < leftMatrix.length();i++){
+            SharedVector row = leftMatrix.get(i);
+            result.add(()->row.negate());
+        }
+        return result;
     }
 
+
     public List<Runnable> createTransposeTasks() {
-        // TODO: return tasks that transpose rows
-        return null;
+        //return tasks that transpose rows
+        List<Runnable> result = new ArrayList<>();
+        for(int i =0; i < leftMatrix.length();i++){
+            SharedVector row = leftMatrix.get(i);
+            result.add(()->row.transpose()); //() tells the compiler we override run()
+        }
+        return result;
     }
 
     public String getWorkerReport() {
-        // TODO: return summary of worker activity
-        return null;
+        return executor.getWorkerReport();
     }
 }

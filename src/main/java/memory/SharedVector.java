@@ -100,25 +100,36 @@ public class SharedVector {
         }
     }
 
-    //
+    
     public void add(SharedVector other) {
         //basic command
         //@PRE:this.length() == other.length()
         //@POST:this.get(i) == (PRE.get(i) + other.get(i)) for each 0<=i<length()
         //Using Write Lock to ensure no one read incorrect data / write while im writing
-        writeLock();
+        //resource ordering in order to prevent deadlock:
+        if(System.identityHashCode(this)<System.identityHashCode(other)){
+            this.writeLock();
+            other.readLock();
+        }
+        else{
+            other.readLock();
+            this.writeLock();
+        }
         try{
-        if(other.length()!=this.length()){
-            throw new IllegalArgumentException("lengths does not match");
+        if(other.vector.length!=this.vector.length || other.orientation!=orientation){
+            throw new IllegalArgumentException("lengths/orientation does not match");
         }
         for(int i=0; i < this.vector.length; i++){
             double temp = vector[i];
-            this.vector[i] = temp + other.get(i);
+            this.vector[i] = temp + other.vector[i];
         }
         }finally{
-        writeUnlock();
+        //deadlock can only happen while locking so here the resource ordering doesnt matter
+        this.writeUnlock();
+        other.readUnlock();
         }
     }
+
 
     public void negate() {
         //basic command
@@ -140,20 +151,31 @@ public class SharedVector {
         //@PRE:this.length() == other.length()
         //@POST:uses get() to calculate and RETURN this · other (let's say this is ROW_MAJOR and other COLUMN_MAJOR, otherwise they can be transposed)
         //Using Read Lock to ensure data isnt changing while retrieving it 
-        readLock();
+        //resource ordering in order to prevent deadlock:
+        SharedVector firstLock, secondLock;
+        if(System.identityHashCode(this)<System.identityHashCode(other)){
+            firstLock = this;
+            secondLock = other;
+        }
+        else{
+            firstLock = other;
+            secondLock = this;
+        }
+        firstLock.readLock();
+        secondLock.readLock();
         double sum = 0; 
         try{
-        if(other.length()!=this.length()){
+        if(other.vector.length!=this.vector.length){
             throw new IllegalArgumentException("lengths does not match");
         }
         for(int i=0; i < this.vector.length; i++){
-            //notice how thread the gets this task will lock vector but also other.get will lock other.vector
-            double temp = vector[i]*other.get(i);
+            double temp = vector[i]*other.vector[i];
             sum = sum + temp;
         }
         return sum;
         }finally{
-        readUnlock();
+        secondLock.readUnlock();
+        firstLock.readUnlock();
         }
     }
         
