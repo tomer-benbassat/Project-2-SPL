@@ -13,7 +13,7 @@ public class LinearAlgebraEngine {
     private TiredExecutor executor;
 
     public LinearAlgebraEngine(int numThreads) {
-        // TODO: create executor with given thread count
+        executor = new TiredExecutor(numThreads);
     }
 
     public ComputationNode run(ComputationNode computationRoot) {
@@ -28,6 +28,11 @@ public class LinearAlgebraEngine {
 
     public List<Runnable> createAddTasks() {
         // TODO: return tasks that perform row-wise addition
+        if(leftMatrix.length()!=rightMatrix.length() ||
+         leftMatrix.get(0).length()!=rightMatrix.get(0).length()){
+            throw new IllegalArgumentException("matrix's dont match in size");
+         }
+
         return null;
     }
 
@@ -49,5 +54,33 @@ public class LinearAlgebraEngine {
     public String getWorkerReport() {
         // TODO: return summary of worker activity
         return null;
+    }
+
+    public class task implements Runnable {
+        private final Runnable realTask;
+        private final TiredThread worker;
+        private final TiredExecutor executor;
+
+        public task(Runnable realTask, TiredThread worker, TiredExecutor executor) {
+            this.realTask = realTask;
+            this.worker = worker;
+            this.executor = executor;
+        }
+
+        @Override
+        public void run() {
+            long start = System.currentTimeMillis();
+            try {
+                // ביצוע המשימה האמיתית
+                realTask.run();
+            } finally {
+                long end = System.currentTimeMillis();
+                long duration = end - start;
+
+                executor.decrementInFlightCAS();
+                
+                executor.returnToHeap(worker);
+            }
+        }
     }
 }

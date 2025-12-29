@@ -117,7 +117,7 @@ public class SharedVector {
         }
         finally{
             other.readUnlock();
-            readLock();
+            readUnlock();
         }
     }
 
@@ -135,7 +135,7 @@ public class SharedVector {
                 try{
                     double sum = 0;
                     for (int i = 0; i < this.length(); i++) {
-                        sum += this.get(i) * curr.get(i);
+                        sum += vector[i] * curr.get(i);
                     }
                     result[j] = sum;
                 }finally{

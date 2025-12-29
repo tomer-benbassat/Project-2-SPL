@@ -89,12 +89,40 @@ public class SharedMatrix {
     }
 
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
-        // TODO: acquire read lock for each vector
-    }
+        if (vecs == null) throw new IllegalArgumentException("Array is null");
+        
+        int acquiredCount = 0;
+        try {
+            for (SharedVector v : vecs) {
+                if (v == null) throw new IllegalArgumentException("Vector element is null");
+                v.readLock();
+                acquiredCount++;
+            }
+        } catch (Exception e) {
+            // CLEANUP: If we failed to get all locks, release the ones we got
+            for (int i = 0; i < acquiredCount; i++) {
+                vecs[i].readUnlock();
+            }
+            throw e; // Pass the error up
+        }
+    }   
 
     private void releaseAllVectorReadLocks(SharedVector[] vecs) {
-        for (SharedVector vec : vecs) {
-            vec.readUnlock();
+        if (vecs == null) throw new IllegalArgumentException("Array is null");
+        
+        int releaseCount = 0;
+        try {
+            for (SharedVector v : vecs) {
+                if (v == null) throw new IllegalArgumentException("Vector element is null");
+                v.readUnlock();
+                releaseCount++;
+            }
+        } catch (Exception e) {
+            // CLEANUP: If we failed to get all locks, release the ones we got
+            for (int i = 0; i < releaseCount; i++) {
+                vecs[i].readUnlock();
+            }
+            throw e; // Pass the error up
         }
     }
 

@@ -12,7 +12,7 @@ public class TiredExecutor {
     private final AtomicInteger inFlight = new AtomicInteger(0);
 
     public TiredExecutor(int numThreads) {
-        workers = new TiredThread[numThreads]
+        workers = new TiredThread[numThreads];
         for (int i = 0 ; i<numThreads ; i++){
             TiredThread curr = new TiredThread(i, 0); //change fatigue factor
             idleMinHeap.add(curr);
@@ -21,21 +21,33 @@ public class TiredExecutor {
     }
 
     public void submit(Runnable task) {
-        TiredThread leastTired = idleMinHeap.poll();
-        leastTired.newTask(task);
-        leastTired.run();
+        try {
+            // take() עוצר ומחכה אוטומטית אם התור ריק, ללא צורך ב-wait/notify
+            TiredThread worker = idleMinHeap.take(); 
+            worker.newTask(task);
+            inFlight.incrementAndGet(); 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void submitAll(Iterable<Runnable> tasks) {
         // TODO: submit tasks one by one and wait until all finish
+        for (Runnable task : tasks){
+            submit(task);
+        }  
     }
 
     public void shutdown() throws InterruptedException {
-        // TODO
+        for (TiredThread thread : idleMinHeap){
+            thread.shutdown();
+        }
     }
 
     public synchronized String getWorkerReport() {
         // TODO: return readable statistics for each worker
-        return null;
+        for (int i = 0 ; i < workers.length ; i++){
+            
+        }
     }
 }
