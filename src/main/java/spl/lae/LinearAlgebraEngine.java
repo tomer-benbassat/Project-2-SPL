@@ -4,7 +4,9 @@ import parser.*;
 import memory.*;
 import scheduling.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.DoubleAdder;
 
 public class LinearAlgebraEngine {
 
@@ -18,12 +20,21 @@ public class LinearAlgebraEngine {
 
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
+        computationRoot.associativeNesting();
+        while (computationRoot.getMatrix()!=null){
+            ComputationNode curr = computationRoot.findResolvable();
+            loadAndCompute(curr);
+        }
         return null;
     }
 
     public void loadAndCompute(ComputationNode node) {
         // TODO: load operand matrices
         // TODO: create compute tasks & submit tasks to executor
+
+
+
+        node.setType();
     }
 
     public List<Runnable> createAddTasks() {
@@ -32,8 +43,13 @@ public class LinearAlgebraEngine {
          leftMatrix.get(0).length()!=rightMatrix.get(0).length()){
             throw new IllegalArgumentException("matrix's dont match in size");
          }
-
-        return null;
+         List<Runnable> result = new ArrayList<>();
+         for (int i = 0; i < leftMatrix.length();i++){
+            SharedVector a = leftMatrix.get(i);
+            SharedVector b = rightMatrix.get(i);
+            result.add(new task(() -> a.add(b)));
+         }
+        return result;
     }
 
     public List<Runnable> createMultiplyTasks() {
@@ -42,13 +58,21 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createNegateTasks() {
-        // TODO: return tasks that negate rows
-        return null;
+         List<Runnable> result = new ArrayList<>();
+         for (int i = 0; i < leftMatrix.length() ; i++){
+            SharedVector a = leftMatrix.get(i);
+            result.add(new task(() -> a.negate()));
+         }
+        return result;
     }
 
     public List<Runnable> createTransposeTasks() {
-        // TODO: return tasks that transpose rows
-        return null;
+        List<Runnable> result = new ArrayList<>();
+         for (int i = 0; i < leftMatrix.length() ; i++){
+            SharedVector a = leftMatrix.get(i);
+            result.add(new task(() -> a.transpose()));
+         }
+        return result;
     }
 
     public String getWorkerReport() {
@@ -56,31 +80,16 @@ public class LinearAlgebraEngine {
         return null;
     }
 
-    public class task implements Runnable {
-        private final Runnable realTask;
-        private final TiredThread worker;
-        private final TiredExecutor executor;
+    private static class task implements Runnable {
+        private final Runnable action;
 
-        public task(Runnable realTask, TiredThread worker, TiredExecutor executor) {
-            this.realTask = realTask;
-            this.worker = worker;
-            this.executor = executor;
+        public task(Runnable action) {
+            this.action = action;
         }
 
         @Override
         public void run() {
-            long start = System.currentTimeMillis();
-            try {
-                // ביצוע המשימה האמיתית
-                realTask.run();
-            } finally {
-                long end = System.currentTimeMillis();
-                long duration = end - start;
-
-                executor.decrementInFlightCAS();
-                
-                executor.returnToHeap(worker);
-            }
+            action.run();
         }
     }
 }

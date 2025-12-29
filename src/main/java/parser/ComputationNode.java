@@ -96,6 +96,10 @@ public class ComputationNode {
         }
         return matrix;
     }
+    //////////// helper function /////////////////////
+    public void setType(ComputationNodeType type){
+        nodeType = type;
+    }
 
 
 }
