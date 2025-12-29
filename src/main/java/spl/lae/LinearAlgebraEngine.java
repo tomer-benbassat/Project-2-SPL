@@ -22,10 +22,41 @@ public class LinearAlgebraEngine {
         return null;
     }
 
+    //@PRE: node is resolvable aka his children are matrices
+    //&& each node has 2 childen(associatveNestins)
     public void loadAndCompute(ComputationNode node) {
         // TODO: load operand matrices
         // TODO: create compute tasks & submit tasks to executor
+        //load:
+        ComputationNodeType type = node.getNodeType();
+        List<ComputationNode> children = node.getChildren();
+        leftMatrix.loadRowMajor(children.get(0).getMatrix());
+        if(type==ComputationNodeType.ADD){
+            rightMatrix.loadRowMajor(children.get(1).getMatrix());
+        }
+        if(type==ComputationNodeType.MULTIPLY){
+            rightMatrix.loadColumnMajor(children.get(1).getMatrix());
+        }
+        //create compute tasks
+        List<Runnable> tasks = new ArrayList<>();
+        if(type==ComputationNodeType.ADD){
+            tasks = createAddTasks();
+        }
+        if(type==ComputationNodeType.MULTIPLY){
+            tasks = createMultiplyTasks();
+        }
+         if(type==ComputationNodeType.NEGATE){
+            tasks = createNegateTasks();
+        }
+        if(type==ComputationNodeType.TRANSPOSE){
+            tasks = createTransposeTasks();
+        }
+        //submit
+        executor.submitAll(tasks);
+        //back to ComputationNode:
+        node.resolve(leftMatrix.readRowMajor());
     }
+
 
     //@PRE: leftMatrix and rightmatrix has same number of rows and columns, &&they arent empty
     public List<Runnable> createAddTasks() {
