@@ -18,7 +18,6 @@ public class SharedVector {
 
     public double get(int index) {
         //@pre index >= 0 && index < vector.length
-
         readLock();
         try {
             if (index < 0 || index >= vector.length) {
@@ -71,7 +70,6 @@ public class SharedVector {
 
     public void add(SharedVector other) {
         //@pre this.length() == other.length()
-        /*maybe do 2 times try and catch? */
         writeLock();
         other.readLock();
         try{
