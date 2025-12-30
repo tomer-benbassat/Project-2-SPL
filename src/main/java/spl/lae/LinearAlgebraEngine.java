@@ -21,9 +21,18 @@ public class LinearAlgebraEngine {
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
         computationRoot.associativeNesting();
-        while (computationRoot.getMatrix()!=null){
+        while (computationRoot.getNodeType()!= ComputationNodeType.MATRIX) {
             ComputationNode curr = computationRoot.findResolvable();
+            if (curr == null) {
+                throw new IllegalStateException("No resolvable node found, but computation not complete");
+            }
             loadAndCompute(curr);
+        }
+        try {
+            executor.shutdown();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        throw new RuntimeException("Executor shutdown interrupted", e);
         }
         return computationRoot;
     }
@@ -39,33 +48,40 @@ public class LinearAlgebraEngine {
         double[][] matrixA = children.get(0).getMatrix();
             leftMatrix.loadRowMajor(matrixA);
         List<Runnable> allTasks = new ArrayList<>();
-        switch (node.getNodeType()) {
-            case ADD:
-                if (children.size() < 2) {
-                    throw new IllegalArgumentException("ADD operation requires two matrixs");
-                } else {
-                    double[][] matrixB = children.get(1).getMatrix();
-                    rightMatrix.loadRowMajor(matrixB);
-                }
-                allTasks = createAddTasks();
-                break;
-            case MULTIPLY:
-                if (children.size() < 2) {
-                    throw new IllegalArgumentException("MULTIPLY operation requires two matrixs");
-                } else {
-                    double[][] matrixB = children.get(1).getMatrix();
-                    rightMatrix.loadColumnMajor(matrixB);
-                }
-                allTasks = createMultiplyTasks();
-                break;
-            case NEGATE:
-                allTasks = createNegateTasks();
-                break;
-            case TRANSPOSE:
-                allTasks = createTransposeTasks();
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown node type: " + node.getNodeType());
+        ComputationNodeType type = node.getNodeType();
+
+        if (type == ComputationNodeType.ADD) {
+            if (children.size() < 2) {
+                throw new IllegalArgumentException("ADD operation requires two matrixs");
+            } else {
+                double[][] matrixB = children.get(1).getMatrix();
+                rightMatrix.loadRowMajor(matrixB);
+            }
+            allTasks = createAddTasks();
+        } 
+        else if (type == ComputationNodeType.MULTIPLY) {
+            if (children.size() < 2) {
+                throw new IllegalArgumentException("MULTIPLY operation requires two matrixs");
+            } else {
+                double[][] matrixB = children.get(1).getMatrix();
+                rightMatrix.loadColumnMajor(matrixB);
+            }
+            allTasks = createMultiplyTasks();
+        } 
+        else if (type == ComputationNodeType.NEGATE) {
+            if (children.size() != 1) {
+                throw new IllegalArgumentException("NEGATE operation requires one matrix");
+            }
+            allTasks = createNegateTasks();
+        } 
+        else if (type == ComputationNodeType.TRANSPOSE) {
+            if (children.size() != 1) {
+                throw new IllegalArgumentException("TRANSPOSE operation requires one matrix");
+            }
+            allTasks = createTransposeTasks();
+        } 
+        else {
+            throw new UnsupportedOperationException("Unknown node type: " + type);
         }
         executor.submitAll(allTasks);
         node.resolve(leftMatrix.readRowMajor());
@@ -73,7 +89,7 @@ public class LinearAlgebraEngine {
 
     public List<Runnable> createAddTasks() {
         // TODO: return tasks that perform row-wise addition
-        //@pre leftMatrix.length() == rightMatrix.length() &&
+        //@pre leftMatrix.length() == rightMatrix.length()
         if(leftMatrix.length()!=rightMatrix.length() ||
          leftMatrix.get(0).length()!=rightMatrix.get(0).length()){
             throw new IllegalArgumentException("matrix's dont match in size");
