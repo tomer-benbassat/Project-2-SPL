@@ -78,6 +78,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
                     alive.set(false);
                     return;
                 }
+                busy.set(true);
                 long start = System.nanoTime();
                 timeIdle.set(timeIdle.get() + (start - idleStartTime.get()));
                 try {

@@ -12,6 +12,7 @@ public class SharedMatrix {
     public SharedMatrix(double[][] matrix) {
         // @PRE:marix!=null
         // @POST:this.vectors represents ROW_MAJOR matrix with matrix data
+        //@Post all vectors are initialized to ROW_MAJOR
         if (matrix == null) {
             throw new IllegalArgumentException("matrix is null");
         }
