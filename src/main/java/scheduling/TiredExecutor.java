@@ -12,9 +12,14 @@ public class TiredExecutor {
     private final AtomicInteger inFlight = new AtomicInteger(0);
 
     public TiredExecutor(int numThreads) {
+        //pre numThreads > 0
+        //post workers.length == numThreads
+        if(numThreads <= 0){
+            throw new IllegalArgumentException("numThreads must be greater than 0");
+        }
         workers = new TiredThread[numThreads];
         for (int i = 0 ; i<numThreads ; i++){
-            TiredThread curr = new TiredThread(i, 0); //change fatigue factor
+            TiredThread curr = new TiredThread(i, 0.5 + (double) Math.random()); //change fatigue factor
             idleMinHeap.add(curr);
             workers[i]=curr;
         }
@@ -22,7 +27,6 @@ public class TiredExecutor {
 
     public void submit(Runnable task) {
         try {
-            // take() עוצר ומחכה אוטומטית אם התור ריק, ללא צורך ב-wait/notify
             TiredThread worker = idleMinHeap.take(); 
             worker.newTask(task);
             inFlight.incrementAndGet(); 
