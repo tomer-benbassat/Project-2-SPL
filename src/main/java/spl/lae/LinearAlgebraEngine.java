@@ -19,21 +19,38 @@ public class LinearAlgebraEngine {
     
     //@POST:leftMatrix has the result of all calculation
     public ComputationNode run(ComputationNode computationRoot) {
-        // TODO: resolve computation tree step by step until final matrix is produced
-        computationRoot.associativeNesting();
-        while(computationRoot.getNodeType() != ComputationNodeType.MATRIX){
-            loadAndCompute(computationRoot.findResolvable());
+        try{
+            computationRoot.associativeNesting();
+            while(computationRoot.getNodeType() != ComputationNodeType.MATRIX){
+                loadAndCompute(computationRoot.findResolvable());
+            }
+        }finally{ //make sure we shutdown even if we got exceptions
+            try{
+            executor.shutdown();
+            }catch(InterruptedException e){ //comes from shutdown
+                throw new RuntimeException("executor has shut down unexpectedly");
+            }
         }
         return computationRoot;
     }
 
     //@PRE: node is resolvable aka his children are matrices
-    //&& each node has 2 childen(associatveNestins)
+    //&& for UNARY operators exactly 1 kid, for Binary operator at least 2
     public void loadAndCompute(ComputationNode node) {
-        // TODO: load operand matrices
-        // TODO: create compute tasks & submit tasks to executor
-        //load:
+        //exceptions:
         ComputationNodeType type = node.getNodeType();
+        if(type==ComputationNodeType.ADD || type == ComputationNodeType.MULTIPLY){
+            if(node.getChildren().size() < 2){
+                throw new IllegalArgumentException("binary operator with less than 2 kids");
+            }
+        }
+        if(type==ComputationNodeType.TRANSPOSE || type==ComputationNodeType.NEGATE){
+            if(node.getChildren().size() != 1){
+                throw new IllegalArgumentException("unary operator with more than 1 kid");
+            }
+        }
+
+        //load:
         List<ComputationNode> children = node.getChildren();
         leftMatrix.loadRowMajor(children.get(0).getMatrix());
         if(type==ComputationNodeType.ADD){
