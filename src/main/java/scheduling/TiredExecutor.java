@@ -25,29 +25,41 @@ public class TiredExecutor {
     //@PRE:none
     //@POST:task has submited, the worker who executed it, has returned to priority queue
     public void submit(Runnable task) {
-        try{
-            inFlight.incrementAndGet();
-            TiredThread currentThread = idleMinHeap.take(); //take aka blocking if none are current idle
-            //make sure thread is back to priority queue after finishing task:
-            Runnable wrapper = new Runnable(){ //anonymous
-                @Override
-                public void run(){
-                    try{
-                        task.run();
-                    }finally{ //suppose task.run failed, make sure thread is not lost in space&counter is up-to-date
-                        idleMinHeap.add(currentThread);
-                        synchronized(inFlight){ //you have to synchronized in order to use wait&notify
-                            inFlight.decrementAndGet();
-                            if(inFlight.get()==0){
-                            inFlight.notifyAll();
-                            }
-                        } 
+        inFlight.incrementAndGet();
+        boolean taskHasSubmitted = false;
+        while(!taskHasSubmitted){ // due to assigment restrictions the thread can be back to pool even though its bust therfore throw exception so thats how we handle 
+            try{
+                TiredThread currentThread = idleMinHeap.take(); //take aka blocking if none are current idle
+                //make sure thread is back to priority queue after finishing task:
+                Runnable wrapper = new Runnable(){ //anonymous
+                    @Override
+                    public void run(){
+                        try{
+                            task.run();
+                        }
+                        finally{ //suppose task.run failed, make sure thread is not lost in space&counter is up-to-date
+                            idleMinHeap.add(currentThread);
+                            synchronized(inFlight){ //you have to synchronized in order to use wait&notify
+                                inFlight.decrementAndGet();
+                                if(inFlight.get()==0){
+                                inFlight.notifyAll();
+                                }
+                            } 
+                        }
                     }
+                };
+                //end of anonymous
+                try{
+                    currentThread.newTask(wrapper);
+                    taskHasSubmitted = true;
+                }catch(IllegalStateException e){//the thread went back to pool even though its still busy due to wrapper 
+                    idleMinHeap.add(currentThread);
                 }
-            };
-            currentThread.newTask(wrapper);
-        }catch(InterruptedException e){  //we couldnt take thread of priority queue so counter-- (the task is not executed...)
-            inFlight.decrementAndGet();
+            }
+            catch(InterruptedException e){  //we couldnt take thread of priority queue so counter-- (the task is not executed...)
+                inFlight.decrementAndGet();
+                return; //interrupted.....
+            }
         }
     }
 

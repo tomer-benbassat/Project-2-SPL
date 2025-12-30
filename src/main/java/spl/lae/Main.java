@@ -1,5 +1,7 @@
 package spl.lae;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.ParseException;
 
 import parser.*;
@@ -28,6 +30,9 @@ public class Main {
         LinearAlgebraEngine lae = new LinearAlgebraEngine(numOfThreads);
         ComputationNode result = lae.run(root);
         OutputWriter.write(result.getMatrix(),args[2]);
+        
+        //addition from the forum - need to print report
+        System.out.println(lae.getWorkerReport());
       }
       catch(Exception e){
         /* examples possible exceptions:

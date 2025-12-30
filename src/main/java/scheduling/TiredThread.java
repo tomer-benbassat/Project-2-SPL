@@ -62,9 +62,9 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
     //@POST:the task has been inserted to this thread handoff Queue
     public void newTask(Runnable task) {
         if(isBusy() || !handoff.offer(task)){
-            //first condition:thread is currently executing task, so its not optimized to give it to hime. we would like to give it to other available thread
+            //first condition:thread is currently executing task, so its not optimized to give it to him. we would like to give it to other available thread
             //second conition:queue is full,dont have place for other task
-            throw new IllegalStateException();
+            throw new IllegalStateException("the worker is not ready to accept task");
         }
     }
 
