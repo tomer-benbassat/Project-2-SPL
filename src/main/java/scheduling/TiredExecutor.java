@@ -33,7 +33,21 @@ public class TiredExecutor {
         }
         try {
             TiredThread worker = idleMinHeap.take(); 
-            worker.newTask(task);
+            Runnable wrappedTask = new Runnable(){
+                @Override
+                public void run(){
+                    try{
+                        task.run();
+                    }finally{
+                        idleMinHeap.put(worker); 
+                        inFlight.set(inFlight.get() - 1);
+                        synchronized (inFlight) {
+                            inFlight.notifyAll();
+                        }
+                    }
+                }
+            };
+            worker.newTask(wrappedTask);
             inFlight.set(inFlight.get() + 1);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
