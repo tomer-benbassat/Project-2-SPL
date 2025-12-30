@@ -57,15 +57,10 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
     public void newTask(Runnable task) {
         //@pre task != null
         if(task == null) throw new IllegalArgumentException("task is null");
-        if(isBusy()) throw new IllegalStateException("thread is currently busy");
-        busy.set(true);
-        boolean accepted = handoff.offer(task);
-        if (!accepted) {
-            busy.set(false);
-            throw new IllegalStateException("blockingQueue is full");
+        if(isBusy() || !handoff.offer(task)) {
+            throw new IllegalStateException("Worker is not ready to accept a new task");
         }
     }
-
     /**
      * Request this worker to stop after finishing current task.
      * Inserts a poison pill so the worker wakes up and exits.
