@@ -25,16 +25,46 @@ public class LinearAlgebraEngine {
             ComputationNode curr = computationRoot.findResolvable();
             loadAndCompute(curr);
         }
-        return null;
+        return computationRoot;
     }
 
     public void loadAndCompute(ComputationNode node) {
         // TODO: load operand matrices
         // TODO: create compute tasks & submit tasks to executor
-
-
-
-        node.setType();
+        List<ComputationNode> children = node.getChildren();
+        double[][] matrixA = children.get(0).getMatrix();
+            leftMatrix.loadRowMajor(matrixA);
+        List<Runnable> allTasks = new ArrayList<>();
+        switch (node.getNodeType()) {
+            case ADD:
+                if (children.size() < 2) {
+                    throw new IllegalArgumentException("ADD operation requires two matrixs");
+                } else {
+                    double[][] matrixB = children.get(1).getMatrix();
+                    rightMatrix.loadRowMajor(matrixB);
+                }
+                allTasks = createAddTasks();
+                break;
+            case MULTIPLY:
+                if (children.size() < 2) {
+                    throw new IllegalArgumentException("MULTIPLY operation requires two matrixs");
+                } else {
+                    double[][] matrixB = children.get(1).getMatrix();
+                    rightMatrix.loadColumnMajor(matrixB);
+                }
+                allTasks = createMultiplyTasks();
+                break;
+            case NEGATE:
+                allTasks = createNegateTasks();
+                break;
+            case TRANSPOSE:
+                allTasks = createTransposeTasks();
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown node type: " + node.getNodeType());
+        }
+        executor.submitAll(allTasks);
+        node.resolve(leftMatrix.readRowMajor());
     }
 
     public List<Runnable> createAddTasks() {
@@ -80,7 +110,7 @@ public class LinearAlgebraEngine {
         return null;
     }
 
-    private static class task implements Runnable {
+    private class task implements Runnable {
         private final Runnable action;
 
         public task(Runnable action) {
