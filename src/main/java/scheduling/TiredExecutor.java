@@ -19,7 +19,7 @@ public class TiredExecutor {
         }
         workers = new TiredThread[numThreads];
         for (int i = 0 ; i<numThreads ; i++){
-            TiredThread curr = new TiredThread(i, 0.5 + (double) Math.random(), this); //change fatigue factor
+            TiredThread curr = new TiredThread(i, 0.5 + (double) Math.random()); //change fatigue factor
             idleMinHeap.add(curr);
             workers[i]=curr;
             curr.start();
