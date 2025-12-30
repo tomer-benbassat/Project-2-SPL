@@ -9,6 +9,8 @@ public class SharedVector {
     private ReadWriteLock lock = new java.util.concurrent.locks.ReentrantReadWriteLock();
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
+        // @pre vector != null
+        // @post this.vector == vector && this.orientation == orientation
         if (vector == null) {
             throw new IllegalArgumentException("Vector data cannot be null");
         }
@@ -18,6 +20,7 @@ public class SharedVector {
 
     public double get(int index) {
         //@pre index >= 0 && index < vector.length
+        //@post result == this.vector[index]
         readLock();
         try {
             if (index < 0 || index >= vector.length) {
@@ -30,11 +33,25 @@ public class SharedVector {
     }
 
     public int length() {
-        return vector.length; 
+        //@pre true
+        //@post result == this.vector.length
+        readLock();
+        try {
+            return vector.length;
+        } finally {
+            readUnlock();
+        }
     }
 
     public VectorOrientation getOrientation() {
-        return orientation;
+        //@pre true
+        //@post result == this.orientation
+        readLock();
+        try {
+            return orientation;
+        } finally {
+            readUnlock();
+        }
     }
 
     public void writeLock() {
@@ -70,23 +87,23 @@ public class SharedVector {
 
     public void add(SharedVector other) {
         //@pre this.length() == other.length()
+        //@post for all i: this.vector[i] == old(this.vector[i]) + other.vector[i]
         writeLock();
-        other.readLock();
         try{
             if (this.length() != other.length()) {
                 throw new IllegalArgumentException("Incompatible vector lengths");
             }
             for (int i = 0; i < this.length(); i++) {
-                this.vector[i] += other.get(i);
+                this.vector[i] += other.get(i); // other.get(i) locks other for reading 
             }
         }
         finally{
-            other.readUnlock();
             writeUnlock();
         }
     }
 
     public void negate() {
+        //@post for all i: this.vector[i] == -1 * old(this.vector[i])
         writeLock();
         try{
             for (int i = 0 ; i<vector.length ; i++){
@@ -99,49 +116,51 @@ public class SharedVector {
     }
 
     public double dot(SharedVector other) {
+        //@per vector orientation == ROW_MAJOR && other.orientation == COLUMN_MAJOR
         //@pre this.length() == other.length()
-        /* maybe 2 try & finally */
+        //@post result == sum for all i: this.vector[i] * other.vector[i]
         readLock();
-        other.readLock();
         try{
             if (length() != other.length()){
                 throw new IllegalArgumentException("Incompatible vector lengths");
             }
+            if( this.getOrientation() != VectorOrientation.ROW_MAJOR ||
+                other.getOrientation() != VectorOrientation.COLUMN_MAJOR){
+                throw new IllegalArgumentException("Incompatible vector orientations");
+            }
             double sum = 0;
             for (int i = 0; i < vector.length; i++) {
-                sum += vector[i] * other.vector[i];
+                sum += vector[i] * other.get(i); // other.get(i) locks other for reading
             }
             return sum;
         }
         finally{
-            other.readUnlock();
             readUnlock();
         }
     }
 
     public void vecMatMul(SharedMatrix matrix) {
-        //@pre this.length() == matrix.length()
+        //@pre Vector is ROW_MAJOR, Matrix is COLUMN_MAJOR , this.length() == matrix.length()
+        //@post this.vector == result of multiplying this vector by the matrix
         writeLock();
-        try{
+        try {
+            // Validation of dimensions
             if (this.length() != matrix.length()) {
                 throw new IllegalArgumentException("Incompatible vector and matrix sizes");
             }
-            double[] result = new double[vector.length];
+            // Validation of orientations
+            if (this.getOrientation() != VectorOrientation.ROW_MAJOR ||
+                matrix.getOrientation() != VectorOrientation.COLUMN_MAJOR) {
+                throw new IllegalArgumentException("Incompatible vector and matrix orientations");
+            }
+            // Initialize result array based on the number of columns in the matrix
+            double[] result = new double[matrix.length()];
+            
             for (int j = 0; j < matrix.length(); j++) {
-                SharedVector curr = matrix.get(j);
-                curr.readLock();
-                try{
-                    double sum = 0;
-                    for (int i = 0; i < this.length(); i++) {
-                        sum += vector[i] * curr.get(i);
-                    }
-                    result[j] = sum;
-                }finally{
-                    curr.readUnlock();
-                }
+                result[j] = this.dot(matrix.get(j));
             }
             this.vector = result;
-        }finally{
+        } finally {
             writeUnlock();
         }
     }

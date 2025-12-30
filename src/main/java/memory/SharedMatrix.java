@@ -9,6 +9,8 @@ public class SharedMatrix {
     }
 
     public SharedMatrix(double[][] matrix) {
+        // @pre matrix != null 
+        // @post constructs a SharedMatrix representing the input matrix
         if (matrix == null) throw new IllegalArgumentException("matrix is null");
         int n = matrix.length;
         if (n==0) throw new IllegalArgumentException("matrix is empty");

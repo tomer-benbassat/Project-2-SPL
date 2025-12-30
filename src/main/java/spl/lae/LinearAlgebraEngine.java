@@ -31,6 +31,10 @@ public class LinearAlgebraEngine {
     public void loadAndCompute(ComputationNode node) {
         // TODO: load operand matrices
         // TODO: create compute tasks & submit tasks to executor
+        //@pre node != null && all children of node have their matrices resolved
+        if(node == null){
+            throw new IllegalArgumentException("node is null");
+        }
         List<ComputationNode> children = node.getChildren();
         double[][] matrixA = children.get(0).getMatrix();
             leftMatrix.loadRowMajor(matrixA);
@@ -69,6 +73,7 @@ public class LinearAlgebraEngine {
 
     public List<Runnable> createAddTasks() {
         // TODO: return tasks that perform row-wise addition
+        //@pre leftMatrix.length() == rightMatrix.length() &&
         if(leftMatrix.length()!=rightMatrix.length() ||
          leftMatrix.get(0).length()!=rightMatrix.get(0).length()){
             throw new IllegalArgumentException("matrix's dont match in size");
@@ -83,15 +88,18 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createMultiplyTasks() {
+        //@pre leftMatrix.numColumns() == rightMatrix.numRows()
         List<Runnable> result = new ArrayList<>();
     for (int i = 0; i < leftMatrix.length(); i++) {
-        final SharedVector row = leftMatrix.get(i);
+        SharedVector row = leftMatrix.get(i);
         result.add(new task(() -> row.vecMatMul(rightMatrix)));
     }
     return result;
     }
 
     public List<Runnable> createNegateTasks() {
+        //@pre leftMatrix.orientation == ROW_MAJOR
+        //@post for all i: leftMatrix.get(i) == -1 * old(leftMatrix.get(i))
          List<Runnable> result = new ArrayList<>();
          for (int i = 0; i < leftMatrix.length() ; i++){
             SharedVector a = leftMatrix.get(i);
@@ -101,6 +109,7 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createTransposeTasks() {
+        //@pre leftMatrix.orientation == ROW_MAJOR
         List<Runnable> result = new ArrayList<>();
          for (int i = 0; i < leftMatrix.length() ; i++){
             SharedVector a = leftMatrix.get(i);
