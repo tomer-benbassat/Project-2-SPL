@@ -83,8 +83,12 @@ public class LinearAlgebraEngine {
     }
 
     public List<Runnable> createMultiplyTasks() {
-        // TODO: return tasks that perform row × matrix multiplication
-        return null;
+        List<Runnable> result = new ArrayList<>();
+    for (int i = 0; i < leftMatrix.length(); i++) {
+        final SharedVector row = leftMatrix.get(i);
+        result.add(new task(() -> row.vecMatMul(rightMatrix)));
+    }
+    return result;
     }
 
     public List<Runnable> createNegateTasks() {
