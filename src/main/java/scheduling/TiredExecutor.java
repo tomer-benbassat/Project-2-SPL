@@ -12,24 +12,29 @@ public class TiredExecutor {
     private final AtomicInteger inFlight = new AtomicInteger(0);
 
     public TiredExecutor(int numThreads) {
-        //pre numThreads > 0
-        //post workers.length == numThreads
+        //@pre numThreads > 0
+        //@post workers.length == numThreads
         if(numThreads <= 0){
             throw new IllegalArgumentException("numThreads must be greater than 0");
         }
         workers = new TiredThread[numThreads];
         for (int i = 0 ; i<numThreads ; i++){
-            TiredThread curr = new TiredThread(i, 0.5 + (double) Math.random()); //change fatigue factor
+            TiredThread curr = new TiredThread(i, 0.5 + (double) Math.random(), this); //change fatigue factor
             idleMinHeap.add(curr);
             workers[i]=curr;
+            curr.start();
         }
     }
 
     public void submit(Runnable task) {
+        //@pre task != null
+        if(task == null){
+            throw new IllegalArgumentException("task is null");
+        }
         try {
             TiredThread worker = idleMinHeap.take(); 
             worker.newTask(task);
-            inFlight.incrementAndGet(); 
+            inFlight.set(inFlight.get() + 1);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -39,10 +44,22 @@ public class TiredExecutor {
         // TODO: submit tasks one by one and wait until all finish
         for (Runnable task : tasks){
             submit(task);
-        }  
+        }
+        // Wait for all tasks to complete 
+        synchronized (inFlight) {
+            while (inFlight.get() > 0) {
+                try {
+                    inFlight.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
     }
 
+
     public void shutdown() throws InterruptedException {
+        //@post for all workers: worker.isAlive() == false
         for (TiredThread thread : idleMinHeap){
             thread.shutdown();
         }

@@ -22,10 +22,12 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
     private final AtomicLong timeUsed = new AtomicLong(0); // Total time spent executing tasks
     private final AtomicLong timeIdle = new AtomicLong(0); // Total time spent idle
     private final AtomicLong idleStartTime = new AtomicLong(0); // Timestamp when the worker became idle
+    private final TiredExecutor executor;
 
-    public TiredThread(int id, double fatigueFactor) {
+    public TiredThread(int id, double fatigueFactor, TiredExecutor executor) {
         this.id = id;
         this.fatigueFactor = fatigueFactor;
+        this.executor = executor;
         this.idleStartTime.set(System.nanoTime());
         setName(String.format("FF=%.2f", fatigueFactor));
     }
@@ -93,6 +95,8 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
                     timeUsed.set(timeUsed.get() + (end - start));
                     idleStartTime.set(end);
                     busy.set(false);
+                    executor.idleMinHeap.put(this);
+                    executor.inFlight.decrementAndGet();
                 }
             } catch (InterruptedException e) {
                 alive.set(false);
