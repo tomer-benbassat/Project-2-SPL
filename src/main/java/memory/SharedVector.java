@@ -144,8 +144,10 @@ public class SharedVector {
         //@post this.vector == result of multiplying this vector by the matrix
         writeLock();
         try {
+            int matrixRows = matrix.get(0).length();
+            int matrixCols = matrix.length();
             // Validation of dimensions
-            if (this.length() != matrix.length()) {
+            if (this.length() != matrixRows) {
                 throw new IllegalArgumentException("Incompatible vector and matrix sizes");
             }
             // Validation of orientations
@@ -154,11 +156,20 @@ public class SharedVector {
                 throw new IllegalArgumentException("Incompatible vector and matrix orientations");
             }
             // Initialize result array based on the number of columns in the matrix
-            double[] result = new double[matrix.length()];
-            
-            for (int j = 0; j < matrix.length(); j++) {
-                result[j] = this.dot(matrix.get(j));
+
+            double[] result = new double[matrixCols];
+
+        for (int j = 0; j < matrixCols; j++) {
+
+            // i didnt use dot to avoid deadlocks aka a vector trying to readLock while holding a writeLock
+            SharedVector colVector = matrix.get(j);
+            double sum = 0;
+
+            for (int i = 0; i < matrixRows; i++) {
+                sum += this.vector[i] * colVector.get(i);
             }
+            result[j] = sum;
+        }
             this.vector = result;
         } finally {
             writeUnlock();
