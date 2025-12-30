@@ -16,10 +16,15 @@ public class LinearAlgebraEngine {
     public LinearAlgebraEngine(int numThreads) {
         executor = new TiredExecutor(numThreads); 
     }
-
+    
+    //@POST:leftMatrix has the result of all calculation
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
-        return null;
+        computationRoot.associativeNesting();
+        while(computationRoot.getNodeType() != ComputationNodeType.MATRIX){
+            loadAndCompute(computationRoot.findResolvable());
+        }
+        return computationRoot;
     }
 
     //@PRE: node is resolvable aka his children are matrices
