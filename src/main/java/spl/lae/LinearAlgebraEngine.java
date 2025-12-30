@@ -136,7 +136,11 @@ public class LinearAlgebraEngine {
 
     public String getWorkerReport() {
         // TODO: return summary of worker activity
-        return null;
+        try {
+            return executor.getWorkerReport();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get worker report", e);
+        }
     }
 
     private class task implements Runnable {
