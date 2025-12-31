@@ -12,6 +12,7 @@ public class Main {
         args[1]=inputPath
         args[2]=outputPath
       */
+     
 
       //Parsing the input file and writing the output file.
       InputParser parser = new InputParser();

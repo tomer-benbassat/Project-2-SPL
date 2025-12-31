@@ -33,6 +33,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         setName(String.format("FF=%.2f", fatigueFactor));
     }
 
+
     public int getWorkerId() {
         return id;
     }
