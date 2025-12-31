@@ -42,7 +42,7 @@ public class Main {
         3.IllegalArgumentException(unsuitable dimensions for add or multiply etc)
         4.a lot more since in this assigment I used a more defensive programming 
          */
-        OutputWriter.write(e.getMessage(),args[2]);
+        OutputWriter.write("Illegal operation: " +  e.getMessage(),args[2]);
       }
     }
 }

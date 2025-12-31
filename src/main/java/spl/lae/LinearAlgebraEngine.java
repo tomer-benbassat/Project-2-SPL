@@ -87,7 +87,7 @@ public class LinearAlgebraEngine {
             throw new IllegalArgumentException("empty matrices");
         }
         if(leftMatrix.length()!=rightMatrix.length() || leftMatrix.get(0).length() !=rightMatrix.get(0).length()){
-            throw new IllegalArgumentException("unsuitable dimesnsions");
+            throw new IllegalArgumentException("dimensions mismatch");
         }
         List<Runnable> result = new ArrayList<>();
         for(int i=0; i< leftMatrix.length();i++){
@@ -108,7 +108,7 @@ public class LinearAlgebraEngine {
             throw new IllegalArgumentException("empty matrices");
         }
         if(leftMatrix.get(0).length() != rightMatrix.get(0).length()){
-            throw new IllegalArgumentException("unsuitable dimensions");
+            throw new IllegalArgumentException("dimensions mismatch");
         }
         List<Runnable> result = new ArrayList<>();
         for(int i=0;i < leftMatrix.length();i++){

@@ -198,7 +198,7 @@ public class SharedVector {
             throw new IllegalArgumentException("require COLUMN_MAJOR matrix");
         }
         if(this.vector.length!=matrix.get(0).length()){
-            throw new IllegalArgumentException("dimensions doest not match");
+            throw new IllegalArgumentException("dimensions mismatch");
         }
         double[] result = new double[matrix.length()]; //matrix.length() == number of columns
         for(int i=0;i<matrix.length();i++){
