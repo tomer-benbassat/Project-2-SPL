@@ -94,19 +94,28 @@ public class TiredExecutor {
     //@PRE:none
     //@@POST:string of statistics on each thread has returned
     public synchronized String getWorkerReport() {
-        String report = "";
-        double fairness=0,avg;
-        double totalFatigue = 0;
-        report = report + "===========================SUMMARY===========================" + "\n";
-        for(TiredThread worker : workers){
-            report = report + "Thread ID:" + worker.getWorkerId() + "  "   + "Is Busy:" + worker.isBusy() + "  " + "Time Used(ns):" + worker.getTimeUsed() + "  " + "Time Idle(ns):"+ worker.getTimeIdle() +"  " + "Fatigue:" + worker.getFatigue()+ "\n";
-            totalFatigue += worker.getFatigue();
-        }
-        avg = totalFatigue / workers.length;
-        for(TiredThread worker : workers){
-            fairness += Math.pow((worker.getFatigue() - avg),2);
-        }
-        report = report + "Fairness:" + fairness + "\n" + "===========================SUMMARY===========================" +"\n";
-        return report;
+    // return readable statistics for each worker
+    StringBuilder ret = new StringBuilder();
+    for(TiredThread worker: workers){
+        String report = String.format("Worker %d: Time Used = %d ns, Time Idle = %d ns, Fatigue = %,2f\n",
+                worker.getWorkerId(),
+                worker.getTimeUsed(),
+                worker.getTimeIdle(),
+                worker.getFatigue());
+        ret.append(report);
     }
+    double averageFatigue = 0.0;
+    for(TiredThread worker: workers){
+        averageFatigue += worker.getFatigue();
+    }
+    averageFatigue /= workers.length;
+    ret.append(String.format("Average Fatigue: %.2f\n", averageFatigue));
+    double fairness = 0.0;
+    for(TiredThread worker: workers){
+        fairness += Math.pow(worker.getFatigue() - averageFatigue, 2);
+    }
+    ret.append("Fairness value: " + String.format("%.2f\n", fairness));
+    return ret.toString();
+}
+
 }
