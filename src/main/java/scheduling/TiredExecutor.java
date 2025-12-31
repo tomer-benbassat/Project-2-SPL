@@ -94,18 +94,18 @@ public class TiredExecutor {
     //@PRE:none
     //@@POST:string of statistics on each thread has returned
     public synchronized String getWorkerReport() {
-        String report = "";
+        String report = "=========================SUMMARY========================="+"\n";
         double fairness=0,avg;
         double totalFatigue = 0;
         for(TiredThread worker : workers){
-            report = report + "Thread ID:" + worker.getWorkerId() + "  "  +"  " + "Fatigue:" + worker.getFatigue()+ "  " + "Is Busy: " + worker.isBusy() + "  " + "Time Used: " + worker.getTimeUsed() + "  " + "Time Idle: "+ worker.getTimeIdle() + "\n";
+            report = report + "Thread ID:" + worker.getWorkerId() + "  "   + "Is Busy:" + worker.isBusy() + "  " + "Time Used:" + worker.getTimeUsed() + "  " + "Time Idle: "+ worker.getTimeIdle() +"  "+ "Fatigue:" + worker.getFatigue()+ "  " + "\n";
             totalFatigue += worker.getFatigue();
         }
         avg = totalFatigue / workers.length;
         for(TiredThread worker : workers){
             fairness += Math.pow((worker.getFatigue() - avg),2);
         }
-        report = report + "Fairness:" + fairness;
+        report = report + "Fairness:" + fairness + "\n + =========================SUMMARY=========================" + "\n";
         return report;
     }
 }
