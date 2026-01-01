@@ -89,6 +89,9 @@ public class LinearAlgebraEngine {
         if(leftMatrix.length()!=rightMatrix.length() || leftMatrix.get(0).length() !=rightMatrix.get(0).length()){
             throw new IllegalArgumentException("dimensions mismatch");
         }
+        if(leftMatrix.get(0).getOrientation()!=rightMatrix.get(0).getOrientation()){
+            throw new IllegalArgumentException("orientation mismatch");
+        }
         List<Runnable> result = new ArrayList<>();
         for(int i=0; i< leftMatrix.length();i++){
             SharedVector leftRow = leftMatrix.get(i);
@@ -102,7 +105,7 @@ public class LinearAlgebraEngine {
     public List<Runnable> createMultiplyTasks() {
         //tasks that perform row × matrix multiplication
         if(rightMatrix.getOrientation()!=VectorOrientation.COLUMN_MAJOR){
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("right matrix has to be column orientation");
         }
         if(leftMatrix.length()==0|| rightMatrix.length() == 0){
             throw new IllegalArgumentException("empty matrices");
